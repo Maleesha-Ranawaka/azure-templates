@@ -1,0 +1,13 @@
+
+- template: templates/azure/keyvault-secret-read.yml
+  parameters:
+    serviceConnection: 'sc-azure-prod'
+    keyVaultName: 'kv-myapp-prod'
+    secrets:
+      - 'MyApiKey'
+      - 'DbPassword'
+
+# Now use the secrets in the next step
+- script: echo "Connecting to DB..."
+  env:
+    DB_PASSWORD: $(DbPassword)
