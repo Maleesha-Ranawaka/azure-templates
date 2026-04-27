@@ -1,0 +1,74 @@
+# =============================================================================
+# EXAMPLE: How a developer calls keyvault-secret-create.yml from their pipeline
+# Save this in YOUR repo (not the common repo)
+# =============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  # ── Ideally link a Variable Group that holds sensitive values ──
+  # In Azure DevOps: Pipelines → Library → Variable Groups
+  - group: 'myapp-prod-secrets'   # contains MY_API_KEY, DB_CONNECTION_STRING, etc.
+
+  - name: environment
+    value: 'prod'
+
+  - name: keyVaultName
+    value: 'kv-myapp-prod'        # your actual Key Vault name
+
+  - name: serviceConnection
+    value: 'sc-azure-prod'        # your Azure service connection name
+
+# ---------------------------------------------------------------------------
+# Reference the common repo that stores shared templates
+# ---------------------------------------------------------------------------
+resources:
+  repositories:
+    - repository: common
+      type: git
+      name: YourOrg/common-repo   # <-- change to your org/repo
+      ref: refs/heads/main
+
+# ---------------------------------------------------------------------------
+# Stages
+# ---------------------------------------------------------------------------
+stages:
+
+  - stage: DeploySecrets
+    displayName: 'Deploy Key Vault Secrets'
+    jobs:
+
+      - job: CreateSecrets
+        displayName: 'Create / Update Secrets'
+        pool:
+          vmImage: 'ubuntu-latest'
+
+        steps:
+
+          # ── Call the shared template ──
+          - template: templates/azure/keyvault-secret-create.yml@common
+            parameters:
+              serviceConnection: $(serviceConnection)
+              keyVaultName:      $(keyVaultName)
+              environment:       $(environment)
+              expiresInDays:     90          # 0 = never expires
+              contentType:       'text/plain'
+              dryRun:            false
+              failOnExisting:    false
+
+              # List every secret you want to create/update
+              secrets:
+                - name:  'MyApiKey'
+                  value: $(MY_API_KEY)          # comes from variable group
+
+                - name:  'DbConnectionString'
+                  value: $(DB_CONNECTION_STRING)
+
+                - name:  'StorageAccountKey'
+                  value: $(STORAGE_ACCOUNT_KEY)
+
+                - name:  'JwtSigningSecret'
+                  value: $(JWT_SIGNING_SECRET)
