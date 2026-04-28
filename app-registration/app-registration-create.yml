@@ -1,0 +1,64 @@
+# =============================================================================
+# TEMPLATE: app-registration-create.yml
+# LOCATION:  common-repo/templates/azure/app-registration-create.yml
+# USAGE:
+#   - template: templates/azure/app-registration-create.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       appRegJsonFile: '$(Pipeline.Workspace)/appReg.json'
+#       appRegReferenceName: 'myapp-prod'
+#       appRegKeyName: 'myapp-prod-key'
+#       environment: 'prod'
+# =============================================================================
+
+parameters:
+
+  # ── Required ──────────────────────────────────────────────────────────────
+
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: appRegJsonFile
+    type: string
+    displayName: 'Path to the App Registration JSON file'
+
+  - name: appRegReferenceName
+    type: string
+    displayName: 'App Registration reference name'
+
+  - name: appRegKeyName
+    type: string
+    displayName: 'App Registration key name'
+
+  - name: environment
+    type: string
+    displayName: 'Target environment (dev | test | staging | prod)'
+
+  # ── Optional (commonly used) ───────────────────────────────────────────────
+
+  - name: keyNeverExpire
+    type: boolean
+    displayName: 'Set key to never expire'
+    default: false
+
+  - name: force
+    type: boolean
+    displayName: 'Force overwrite if key already exists'
+    default: false
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'AAD Create App Registration Key: ${{ parameters.appRegKeyName }}'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        Create-AzureADApplicationKey `
+          -AppRegJsonFile "${{ parameters.appRegJsonFile }}" `
+          -AppRegReferenceName "${{ parameters.appRegReferenceName }}" `
+          -AppRegKeyName "${{ parameters.appRegKeyName }}" `
+          -Environment "${{ parameters.environment }}" `
+          -KeyNeverExpire ${{ parameters.keyNeverExpire }} `
+          -Force ${{ parameters.force }}
