@@ -1,0 +1,8 @@
+
+- template: templates/azure/keyvault-secret-delete.yml@common
+  parameters:
+    serviceConnection: 'your-service-connection'
+    keyVaultName: 'kv-myapp-prod'
+    secrets:
+      - 'MyApiKey'
+      - 'DbPassword'
