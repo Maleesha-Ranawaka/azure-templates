@@ -1,0 +1,40 @@
+# =============================================================================
+# TEMPLATE: app-registration-delete.yml
+# LOCATION:  common-repo/templates/azure/app-registration-delete.yml
+# USAGE:
+#   - template: templates/azure/app-registration-delete.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       appRegReferenceName: 'myapp-prod'
+# =============================================================================
+
+parameters:
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: appRegReferenceName
+    type: string
+    displayName: 'App Registration display name'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'AAD Delete App Registration: ${{ parameters.appRegReferenceName }}'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $app = az ad app list `
+          --display-name "${{ parameters.appRegReferenceName }}" `
+          --query "[0].{appId:appId}" `
+          --output json | ConvertFrom-Json
+
+        if (-not $app) {
+          Write-Error "App Registration '${{ parameters.appRegReferenceName }}' not found."
+          exit 1
+        }
+
+        az ad app delete --id "$($app.appId)"
+
+        Write-Host "App Registration '${{ parameters.appRegReferenceName }}' deleted. AppId: $($app.appId)"

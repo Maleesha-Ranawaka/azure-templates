@@ -1,0 +1,59 @@
+# =============================================================================
+# TEMPLATE: app-registration-read.yml
+# LOCATION:  common-repo/templates/azure/app-registration-read.yml
+# USAGE:
+#   - template: templates/azure/app-registration-read.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       appRegReferenceName: 'myapp-prod'
+# OUTPUT VARIABLES:
+#   $(APP_ID)          - Application (client) ID
+#   $(APP_OBJECT_ID)   - Object ID
+#   $(APP_TENANT_ID)   - Tenant ID
+# =============================================================================
+
+# - template: templates/azure/app-registration-read.yml@common
+#   parameters:
+#     serviceConnection: 'sc-azure-prod'
+#     appRegReferenceName: 'myapp-prod'
+
+# # Use output variables in next steps
+# - script: echo "Client ID is $(APP_ID)"
+
+
+parameters:
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: appRegReferenceName
+    type: string
+    displayName: 'App Registration display name'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'AAD Read App Registration: ${{ parameters.appRegReferenceName }}'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $app = az ad app list `
+          --display-name "${{ parameters.appRegReferenceName }}" `
+          --query "[0].{appId:appId, id:id}" `
+          --output json | ConvertFrom-Json
+
+        if (-not $app) {
+          Write-Error "App Registration '${{ parameters.appRegReferenceName }}' not found."
+          exit 1
+        }
+
+        $tenantId = az account show --query "tenantId" --output tsv
+
+        Write-Host "AppId     : $($app.appId)"
+        Write-Host "ObjectId  : $($app.id)"
+        Write-Host "TenantId  : $tenantId"
+
+        Write-Host "##vso[task.setvariable variable=APP_ID]$($app.appId)"
+        Write-Host "##vso[task.setvariable variable=APP_OBJECT_ID]$($app.id)"
+        Write-Host "##vso[task.setvariable variable=APP_TENANT_ID]$tenantId"
