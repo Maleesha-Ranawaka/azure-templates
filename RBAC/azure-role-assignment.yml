@@ -1,0 +1,50 @@
+# =============================================================================
+# TEMPLATE: azure-role-assignment.yml
+# LOCATION:  common-repo/templates/azure/azure-role-assignment.yml
+# USAGE:
+#   - template: templates/azure/azure-role-assignment.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       appId: '$(AppId)'
+#       resourceId: '$(ResourceId)'
+#       role: 'Contributor'
+# =============================================================================
+
+parameters:
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: appId
+    type: string
+    displayName: 'App Registration App ID to assign role'
+
+  - name: resourceId
+    type: string
+    displayName: 'Full ARM Resource ID to assign role on (any Azure resource)'
+
+  - name: role
+    type: string
+    displayName: 'Role to assign (e.g. Reader | Contributor | Owner)'
+    default: 'Reader'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Assign ${{ parameters.role }} on Resource'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $azureSubscriptionId = (ConvertFrom-Json([string](az account get-access-token))).subscription
+        az account set --subscription "$azureSubscriptionId"
+
+        $msiResourceObj = az ad sp show --id "${{ parameters.appId }}" | ConvertFrom-Json
+
+        az role assignment create `
+          --assignee-object-id $msiResourceObj.id `
+          --assignee-principal-type "ServicePrincipal" `
+          --role "${{ parameters.role }}" `
+          --scope "${{ parameters.resourceId }}"
+
+        Write-Host "'${{ parameters.role }}' role assigned to AppId '${{ parameters.appId }}' on resource '${{ parameters.resourceId }}'."

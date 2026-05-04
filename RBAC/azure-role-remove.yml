@@ -1,0 +1,49 @@
+# =============================================================================
+# TEMPLATE: azure-role-remove.yml
+# LOCATION:  common-repo/templates/azure/azure-role-remove.yml
+# USAGE:
+#   - template: templates/azure/azure-role-remove.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       appId: '$(AppId)'
+#       resourceId: '$(ResourceId)'
+#       role: 'Contributor'
+# =============================================================================
+
+parameters:
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: appId
+    type: string
+    displayName: 'App Registration App ID to remove role from'
+
+  - name: resourceId
+    type: string
+    displayName: 'Full ARM Resource ID to remove role from (any Azure resource)'
+
+  - name: role
+    type: string
+    displayName: 'Role to remove (e.g. Reader | Contributor | Owner)'
+    default: 'Reader'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Remove ${{ parameters.role }} from Resource'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $azureSubscriptionId = (ConvertFrom-Json([string](az account get-access-token))).subscription
+        az account set --subscription "$azureSubscriptionId"
+
+        $msiResourceObj = az ad sp show --id "${{ parameters.appId }}" | ConvertFrom-Json
+
+        az role assignment delete `
+          --assignee $msiResourceObj.id `
+          --role "${{ parameters.role }}" `
+          --scope "${{ parameters.resourceId }}"
+
+        Write-Host "'${{ parameters.role }}' role removed from AppId '${{ parameters.appId }}' on resource '${{ parameters.resourceId }}'."
