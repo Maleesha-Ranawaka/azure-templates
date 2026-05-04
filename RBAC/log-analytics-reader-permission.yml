@@ -1,0 +1,44 @@
+# =============================================================================
+# TEMPLATE: log-analytics-reader-permission.yml
+# LOCATION:  common-repo/templates/azure/log-analytics-reader-permission.yml
+# USAGE:
+#   - template: templates/azure/log-analytics-reader-permission.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       appId: '$(MonitorLogAnalytcisAppId)'
+#       logAnalyticsWorkspaceResourceId: '$(LogAnalyticsWorkspaceResourceId)'
+# =============================================================================
+
+parameters:
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: appId
+    type: string
+    displayName: 'App Registration App ID to grant Reader access'
+
+  - name: logAnalyticsWorkspaceResourceId
+    type: string
+    displayName: 'Log Analytics Workspace Resource ID (full ARM resource ID)'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Grant Reader Permission to Log Analytics Workspace'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $azureSubscriptionId = (ConvertFrom-Json([string](az account get-access-token))).subscription
+        az account set --subscription "$azureSubscriptionId"
+
+        $msiResourceObj = az ad sp show --id "${{ parameters.appId }}" | ConvertFrom-Json
+
+        az role assignment create `
+          --assignee-object-id $msiResourceObj.id `
+          --assignee-principal-type "ServicePrincipal" `
+          --role "Reader" `
+          --scope "${{ parameters.logAnalyticsWorkspaceResourceId }}"
+
+        Write-Host "Reader role assigned to AppId '${{ parameters.appId }}' on Log Analytics Workspace."
