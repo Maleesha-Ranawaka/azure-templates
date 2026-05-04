@@ -1,0 +1,49 @@
+# =============================================================================
+# TEMPLATE: log-analytics-role-remove.yml
+# LOCATION:  common-repo/templates/azure/log-analytics-role-remove.yml
+# USAGE:
+#   - template: templates/azure/log-analytics-role-remove.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       appId: '$(LogAnalyticsAppId)'
+#       logAnalyticsWorkspaceResourceId: '$(LogAnalyticsWorkspaceResourceId)'
+#       role: 'Reader'
+# =============================================================================
+
+parameters:
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: appId
+    type: string
+    displayName: 'App Registration App ID to remove role from'
+
+  - name: logAnalyticsWorkspaceResourceId
+    type: string
+    displayName: 'Log Analytics Workspace Resource ID (full ARM resource ID)'
+
+  - name: role
+    type: string
+    displayName: 'Role to remove (e.g. Reader | Contributor | Log Analytics Contributor)'
+    default: 'Reader'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Remove ${{ parameters.role }} Permission from Log Analytics Workspace'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $azureSubscriptionId = (ConvertFrom-Json([string](az account get-access-token))).subscription
+        az account set --subscription "$azureSubscriptionId"
+
+        $msiResourceObj = az ad sp show --id "${{ parameters.appId }}" | ConvertFrom-Json
+
+        az role assignment delete `
+          --assignee $msiResourceObj.id `
+          --role "${{ parameters.role }}" `
+          --scope "${{ parameters.logAnalyticsWorkspaceResourceId }}"
+
+        Write-Host "'${{ parameters.role }}' role removed from AppId '${{ parameters.appId }}' on Log Analytics Workspace."
