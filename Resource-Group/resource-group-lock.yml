@@ -1,0 +1,58 @@
+# =============================================================================
+# TEMPLATE: resource-group-lock.yml
+# LOCATION:  common-repo/templates/azure/resource-group-lock.yml
+# USAGE:
+#   - template: templates/azure/resource-group-lock.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       resourceGroupName: 'rg-myapp-prod'
+#       lockName: 'rg-myapp-prod-lock'
+#       lockType: 'CanNotDelete'
+# =============================================================================
+
+parameters:
+
+  # ── Required ──────────────────────────────────────────────────────────────
+
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: resourceGroupName
+    type: string
+    displayName: 'Resource Group name to lock'
+
+  - name: lockName
+    type: string
+    displayName: 'Lock name'
+
+  # ── Optional ──────────────────────────────────────────────────────────────
+
+  - name: lockType
+    type: string
+    displayName: 'Lock type: CanNotDelete | ReadOnly'
+    default: 'CanNotDelete'
+    values:
+      - CanNotDelete
+      - ReadOnly
+
+  - name: notes
+    type: string
+    displayName: 'Notes / reason for the lock'
+    default: 'Locked by Azure DevOps pipeline'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Lock Resource Group: ${{ parameters.resourceGroupName }} [${{ parameters.lockType }}]'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        az lock create `
+          --name "${{ parameters.lockName }}" `
+          --resource-group "${{ parameters.resourceGroupName }}" `
+          --lock-type "${{ parameters.lockType }}" `
+          --notes "${{ parameters.notes }}"
+
+        Write-Host "'${{ parameters.lockType }}' lock '${{ parameters.lockName }}' applied to Resource Group '${{ parameters.resourceGroupName }}'."

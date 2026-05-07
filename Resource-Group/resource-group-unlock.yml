@@ -1,0 +1,50 @@
+# =============================================================================
+# TEMPLATE: resource-group-unlock.yml
+# LOCATION:  common-repo/templates/azure/resource-group-unlock.yml
+# USAGE:
+#   - template: templates/azure/resource-group-unlock.yml@common
+#     parameters:
+#       serviceConnection: 'your-service-connection'
+#       resourceGroupName: 'rg-myapp-prod'
+#       lockName: 'rg-myapp-prod-lock'
+# =============================================================================
+
+parameters:
+
+  # ── Required ──────────────────────────────────────────────────────────────
+
+  - name: serviceConnection
+    type: string
+    displayName: 'Azure Service Connection'
+
+  - name: resourceGroupName
+    type: string
+    displayName: 'Resource Group name to unlock'
+
+  - name: lockName
+    type: string
+    displayName: 'Lock name to remove'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Unlock Resource Group: ${{ parameters.resourceGroupName }}'
+    inputs:
+      azureSubscription: '${{ parameters.serviceConnection }}'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $lock = az lock list `
+          --resource-group "${{ parameters.resourceGroupName }}" `
+          --query "[?name=='${{ parameters.lockName }}'].id" `
+          --output tsv
+
+        if (-not $lock) {
+          Write-Host "No lock '${{ parameters.lockName }}' found on '${{ parameters.resourceGroupName }}'. Skipping."
+          exit 0
+        }
+
+        az lock delete `
+          --name "${{ parameters.lockName }}" `
+          --resource-group "${{ parameters.resourceGroupName }}"
+
+        Write-Host "Lock '${{ parameters.lockName }}' removed from Resource Group '${{ parameters.resourceGroupName }}'."
