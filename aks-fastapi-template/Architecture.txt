@@ -1,0 +1,13 @@
+aks-fastapi-template/
+├── vars.yml                     ← SINGLE POINT OF CHANGE (edit this only)
+├── azure-pipelines.yml          ← Main pipeline (2 stages)
+├── Dockerfile                   ← FastAPI container build
+├── main.py                      ← Sample FastAPI app
+├── requirements.txt             ← Python deps
+├── pipelines/
+│   ├── build-push.yml           ← Stage 1: Build + Push to ACR
+│   └── deploy.yml               ← Stage 2: Deploy to AKS
+└── k8s/
+    ├── deployment.yaml          ← K8s Deployment (uses {{tokens}})
+    ├── service.yaml             ← K8s ClusterIP Service
+    └── ingress.yaml             ← K8s Ingress

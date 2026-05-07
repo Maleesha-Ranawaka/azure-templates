@@ -1,0 +1,40 @@
+# =============================================================================
+# SINGLE POINT OF CHANGE - vars.yml
+# All other templates and manifests read from these values.
+# =============================================================================
+
+variables:
+
+  # ── Application ────────────────────────────────────────────────────────────
+  - name: appName
+    value: 'fastapi-app'
+  - name: appPort
+    value: '8000'
+  - name: replicaCount
+    value: '2'
+
+  # ── Azure / AKS ────────────────────────────────────────────────────────────
+  - name: serviceConnection
+    value: 'sc-azure-prod'
+  - name: aksClusterName
+    value: 'aks-myapp-prod'
+  - name: aksResourceGroup
+    value: 'rg-aks-prod'
+  - name: aksNamespace
+    value: 'fastapi-prod'
+
+  # ── Container Registry (ACR) ───────────────────────────────────────────────
+  - name: acrName
+    value: 'acrmyappprod'
+  - name: acrServiceConnection
+    value: 'sc-acr-prod'
+  - name: imageRepository
+    value: 'fastapi-app'
+  - name: imageTag
+    value: '$(Build.BuildId)'
+
+  # ── Ingress ────────────────────────────────────────────────────────────────
+  - name: ingressHost
+    value: 'fastapi.example.com'
+  - name: ingressClassName
+    value: 'nginx'
