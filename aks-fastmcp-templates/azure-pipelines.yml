@@ -1,0 +1,34 @@
+# =============================================================================
+# azure-pipelines.yml - Main pipeline (2 stages)
+# Stage 1: Build + Push
+# Stage 2: Deploy to AKS
+# =============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - template: vars.yml
+
+stages:
+
+  - stage: BuildAndPush
+    displayName: 'Build & Push'
+    jobs:
+      - job: BuildPushJob
+        steps:
+          - template: pipelines/build-push.yml
+
+  - stage: Deploy
+    displayName: 'Deploy to AKS'
+    dependsOn: BuildAndPush
+    condition: succeeded()
+    jobs:
+      - job: DeployJob
+        steps:
+          - template: pipelines/deploy.yml

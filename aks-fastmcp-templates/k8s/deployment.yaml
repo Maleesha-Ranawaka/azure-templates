@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{appName}}
+  labels:
+    app: {{appName}}
+spec:
+  replicas: {{replicaCount}}
+  selector:
+    matchLabels:
+      app: {{appName}}
+  template:
+    metadata:
+      labels:
+        app: {{appName}}
+    spec:
+      containers:
+        - name: {{appName}}
+          image: {{acrName}}.azurecr.io/{{imageRepository}}:{{imageTag}}
+          ports:
+            - containerPort: {{appPort}}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{appPort}}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{appPort}}
+            initialDelaySeconds: 15
+            periodSeconds: 20

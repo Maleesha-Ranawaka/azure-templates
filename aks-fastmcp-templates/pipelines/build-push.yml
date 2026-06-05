@@ -1,0 +1,16 @@
+# =============================================================================
+# TEMPLATE: build-push.yml
+# Builds Docker image and pushes to ACR.
+# =============================================================================
+
+steps:
+  - task: Docker@2
+    displayName: 'Build & Push: $(imageRepository):$(imageTag)'
+    inputs:
+      containerRegistry: '$(acrServiceConnection)'
+      repository: '$(imageRepository)'
+      command: 'buildAndPush'
+      Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+      tags: |
+        $(imageTag)
+        latest

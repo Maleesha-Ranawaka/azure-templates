@@ -1,0 +1,36 @@
+# =============================================================================
+# TEMPLATE: deploy.yml
+# Deploys K8s manifests to AKS. Performs token replacement using vars.
+# =============================================================================
+
+steps:
+  - task: replacetokens@5
+    displayName: 'Replace tokens in K8s manifests'
+    inputs:
+      rootDirectory: '$(Build.SourcesDirectory)/k8s'
+      targetFiles: '*.yaml'
+      tokenPattern: 'doublebraces'
+
+  - task: AzureCLI@2
+    displayName: 'AKS: Get credentials'
+    inputs:
+      azureSubscription: '$(serviceConnection)'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        az aks get-credentials `
+          --resource-group "$(aksResourceGroup)" `
+          --name "$(aksClusterName)" `
+          --overwrite-existing
+
+        kubectl create namespace "$(aksNamespace)" --dry-run=client -o yaml | kubectl apply -f -
+
+  - task: AzureCLI@2
+    displayName: 'AKS: Apply manifests'
+    inputs:
+      azureSubscription: '$(serviceConnection)'
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        kubectl apply -f "$(Build.SourcesDirectory)/k8s/" -n "$(aksNamespace)"
+        kubectl rollout status deployment/$(appName) -n "$(aksNamespace)" --timeout=5m
