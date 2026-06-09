@@ -1,0 +1,48 @@
+# =============================================================================
+# SINGLE POINT OF CHANGE - vars.yml
+# All other templates and manifests read from these values.
+# =============================================================================
+
+variables:
+
+  # ── Application ────────────────────────────────────────────────────────────
+  - name: appName
+    value: 'fastapi-app'
+  - name: appPort
+    value: '8000'
+  - name: replicaCount
+    value: '2'
+
+  # ── Azure AD Authentication (multi-tenant) ─────────────────────────────────
+  # Client IDs are NOT secrets — safe to keep here. No client secret is needed;
+  # tokens are validated with Azure's public signing keys.
+  - name: appClientId            # Backend API App Registration (client) ID
+    value: '11111111-2222-3333-4444-555555555555'
+  - name: openApiClientId        # Swagger-UI / SPA App Registration (client) ID
+    value: '66666666-7777-8888-9999-000000000000'
+
+  # ── Azure / AKS ────────────────────────────────────────────────────────────
+  - name: serviceConnection
+    value: 'sc-azure-prod'
+  - name: aksClusterName
+    value: 'aks-myapp-prod'
+  - name: aksResourceGroup
+    value: 'rg-aks-prod'
+  - name: aksNamespace
+    value: 'fastapi-prod'
+
+  # ── Container Registry (ACR) ───────────────────────────────────────────────
+  - name: acrName
+    value: 'acrmyappprod'
+  - name: acrServiceConnection
+    value: 'sc-acr-prod'
+  - name: imageRepository
+    value: 'fastapi-app'
+  - name: imageTag
+    value: '$(Build.BuildId)'
+
+  # ── Ingress ────────────────────────────────────────────────────────────────
+  - name: ingressHost
+    value: 'fastapi.example.com'
+  - name: ingressClassName
+    value: 'nginx'
