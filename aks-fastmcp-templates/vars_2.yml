@@ -15,14 +15,6 @@ variables:
   - name: replicaCount
     value: '2'
 
-  # ── Azure AD Authentication (multi-tenant) ─────────────────────────────────
-  # Client ID is NOT a secret — safe to keep here. No client secret is needed;
-  # tokens are validated with Azure's public signing keys.
-  - name: appClientId            # Backend MCP App Registration (client) ID
-    value: '11111111-2222-3333-4444-555555555555'
-  - name: authBaseUrl            # Public URL of this server (used in OAuth metadata)
-    value: 'https://mcp.example.com'
-
   # ── Azure / AKS ────────────────────────────────────────────────────────────
   - name: serviceConnection
     value: 'sc-azure-prod'

@@ -19,11 +19,6 @@ spec:
           image: {{acrName}}.azurecr.io/{{imageRepository}}:{{imageTag}}
           ports:
             - containerPort: {{appPort}}
-          env:
-            - name: APP_CLIENT_ID
-              value: "{{appClientId}}"
-            - name: BASE_URL
-              value: "{{authBaseUrl}}"
           readinessProbe:
             httpGet:
               path: /health
